@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-/* Script update: 2021-01-22 */
+/* Script update: 2021-01-25 */
 
 
 
@@ -1481,10 +1481,17 @@ var QRBill = class QRBill {
 		//////////////////////////////////////////////////////
 		if (typeof(hook_modify_settings_qr) === typeof(Function)) {
 			hook_modify_settings_qr(invoiceObj, qrcodeData);
-		
+
 			qrcodeData.supplierIbanNumber = this.formatIban(qrcodeData.supplierIbanNumber);
-			if (isValidIBAN(qrcodeData.supplierIbanNumber) !== 1) {
-				qrcodeData.supplierIbanNumber = "@error Incorrect IBAN: "+ qrcodeData.supplierIbanNumber;
+			if (this.ID_QRBILL_WITH_QRIBAN_AND_QRR) {
+				if (isValidIBAN(qrcodeData.supplierIbanNumber) !== 1 || !isQRIBAN(qrcodeData.supplierIbanNumber)) {
+					qrcodeData.supplierIbanNumber = "@error Incorrect QR-IBAN: "+ qrcodeData.supplierIbanNumber;
+				}
+			}
+			else if (this.ID_QRBILL_WITH_IBAN_AND_SCOR || this.ID_QRBILL_WITH_IBAN_WITHOUT_REFERENCE) {
+				if (isValidIBAN(qrcodeData.supplierIbanNumber) !== 1 || isQRIBAN(qrcodeData.supplierIbanNumber)) {
+					qrcodeData.supplierIbanNumber = "@error Incorrect IBAN: "+ qrcodeData.supplierIbanNumber;
+				}
 			}
 		}
 
