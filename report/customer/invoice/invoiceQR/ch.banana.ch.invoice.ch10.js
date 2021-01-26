@@ -14,7 +14,7 @@
 //
 // @id = ch.banana.ch.invoice.ch10
 // @api = 1.0
-// @pubdate = 2021-01-22
+// @pubdate = 2021-01-26
 // @publisher = Banana.ch SA
 // @description = [CH10] Layout with Swiss QR Code
 // @description.it = [CH10] Layout with Swiss QR Code
@@ -121,8 +121,8 @@ function convertParam(userParam) {
   /* array of script's parameters */
   convertedParam.data = [];
 
-  var lengthDetailsColumns = "";
-  var lengthDetailsTexts = "";
+  // var lengthDetailsColumns = "";
+  // var lengthDetailsTexts = "";
 
   /*******************************************************************************************
   * INCLUDE
@@ -466,8 +466,8 @@ function convertParam(userParam) {
   currentParam.value = userParam.details_columns ? userParam.details_columns : '';
   currentParam.defaultvalue = 'Description;Quantity;ReferenceUnit;UnitPrice;Amount'; //texts.column_description+";"+texts.column_quantity+";"+texts.column_reference_unit+";"+texts.column_unit_price+";"+texts.column_amount;
   currentParam.tooltip = texts.param_tooltip_details_columns;
-  //take the number of columns
-  lengthDetailsColumns = userParam.details_columns.split(";").length;
+  // //take the number of columns
+  // lengthDetailsColumns = userParam.details_columns.split(";").length;
   currentParam.readValue = function() {
     userParam.details_columns = this.value;
   }
@@ -803,11 +803,11 @@ function convertParam(userParam) {
     currentParam.defaultvalue = langTexts.description+";"+langTexts.quantity+";"+langTexts.reference_unit+";"+langTexts.unit_price+";"+langTexts.amount;
     currentParam.tooltip = langTexts['param_tooltip_text_details_columns'];
     currentParam.language = langCode;    
-    //take the number of titles
-    lengthDetailsTexts = userParam[langCode+'_text_details_columns'].split(";").length;
-    if (lengthDetailsColumns != lengthDetailsTexts) {
-      currentParam.errorMsg = "@error "+langTexts[langCodeTitle+'_error1_msg'];
-    }
+    // //take the number of titles
+    // lengthDetailsTexts = userParam[langCode+'_text_details_columns'].split(";").length;
+    // if (lengthDetailsColumns != lengthDetailsTexts) {
+    //   currentParam.errorMsg = "@error "+langTexts[langCodeTitle+'_error1_msg'];
+    // }
     currentParam.readValueLang = function(langCode) {
       userParam[langCode+'_text_details_columns'] = this.value;
     }
@@ -1480,6 +1480,11 @@ function validateParamsData(userParamObj) {
 
   var texts = setInvoiceTexts(lang);
 
+  var lengthDetailsColumns = '';
+  var lengthDetailsTexts = '';
+  var langCodes = '';
+  var langCodesError = [];
+
   var isValid = true;
 
   for (var i = 0; i < userParamObj.data.length; i++) {
@@ -1490,14 +1495,9 @@ function validateParamsData(userParamObj) {
     if (userParamObj.data[i].name) {
       key = userParamObj.data[i].name;
     }
-    if (userParamObj.data[i].value && userParamObj.data[i].value.length > 0) {
+    if (userParamObj.data[i].value) {
       value = userParamObj.data[i].value;
     }
-    // if (value.length <= 0 && userParamObj.data[i].placeholder) {
-    //   value = userParamObj.data[i].placeholder;
-    // }
-
-    
 
     /**
      * Checks that XML column names entered exist.
@@ -1528,7 +1528,7 @@ function validateParamsData(userParamObj) {
     }
     // Leave empty to use default values and remove errors
     else if (key === 'details_columns' && value.length <= 0) {
-      userParamObj.data[i].value = 'Description;Quantity;ReferenceUnit;UnitPrice;Amount';
+      //userParamObj.data[i].value = 'Description;Quantity;ReferenceUnit;UnitPrice;Amount';
       if (userParamObj.data[i].errorId) {
         delete userParamObj.data[i].errorId;
       }
@@ -1565,7 +1565,7 @@ function validateParamsData(userParamObj) {
     }
     // Leave empty to use default values and remove errors
     else if (key === 'details_columns_widths' && value.length <= 0) {
-      userParamObj.data[i].value = '45%;10%;10%;20%;15%';
+      //userParamObj.data[i].value = '45%;10%;10%;20%;15%';
       if (userParamObj.data[i].errorId) {
         delete userParamObj.data[i].errorId;
       }
@@ -1577,8 +1577,314 @@ function validateParamsData(userParamObj) {
 
 
 
+    /**
+     * Checks that columns number and the related texts titles match.
+     * When not shows an error message
+     */
+    if (key === "details_columns") {
+      if (value.length > 0) {
+        lengthDetailsColumns = value.split(";").length;
+      } else {
+        lengthDetailsColumns = 5; //when empty use default 5 columns
+      }
+    }
+
+    if (key === "languages" && value.length > 0) {
+      langCodes = value.split(';');
+    }
+
+    for (var j = 0; j < langCodes.length; j++) {
+
+      var langTexts = setInvoiceTexts(langCodes[j]);
+
+      if (key === langCodes[j]+'_text_details_columns' && value.length > 0) {
+
+        lengthDetailsTexts = value.split(";").length; //number of column titles
+
+        if (lengthDetailsColumns != lengthDetailsTexts) {
+          userParamObj.data[i].errorId = 'ID_ERR_COLUMN_NAMES_AND_TEXTS_'+langCodes[j].toUpperCase();
+          userParamObj.data[i].errorMsg = '@error ' + langTexts[langCodes[j]+'_error1_msg'];
+          isValid = false;
+          langCodesError.push(langCodes[j]); //array with all language codes with errors
+        }
+        else {
+          if (userParamObj.data[i].errorId) {
+            delete userParamObj.data[i].errorId;
+          }
+          if (userParamObj.data[i].errorMsg) {
+            delete userParamObj.data[i].errorMsg;
+          }
+        }
+      }
+      // Leave empty to use default values and remove errors
+      else if (key === langCodes[j]+'_text_details_columns' && value.length <= 0) {
+        
+        userParamObj.data[i].value = langTexts.description+";"+langTexts.quantity+";"+langTexts.reference_unit+";"+langTexts.unit_price+";"+langTexts.amount;
+        
+        lengthDetailsTexts = userParamObj.data[i].value.split(";").length; //number of column titles
+
+        if (lengthDetailsColumns != lengthDetailsTexts) {
+          userParamObj.data[i].errorId = 'ID_ERR_COLUMN_NAMES_AND_TEXTS_'+langCodes[j].toUpperCase();
+          userParamObj.data[i].errorMsg = '@error ' + langTexts[langCodes[j]+'_error1_msg'];
+          isValid = false;
+          langCodesError.push(langCodes[j]); //array with all language codes with errors
+        }
+        else {
+          if (userParamObj.data[i].errorId) {
+            delete userParamObj.data[i].errorId;
+          }
+          if (userParamObj.data[i].errorMsg) {
+            delete userParamObj.data[i].errorMsg;
+          }
+        }
+      }
+    }
+  
+
+
+
 
   }
+
+
+  // Banana.console.log(lengthDetailsColumns);
+  // Banana.console.log(langCodes);
+  // Banana.console.log(langCodesError);
+  // Banana.console.log(arrDiff);
+
+
+  var arrDiff = [];
+  for (var i in langCodes) {
+    if(langCodesError.indexOf(langCodes[i]) === -1) {
+      arrDiff.push(langCodes[i]);
+    }
+  }
+  for(i in langCodesError) {
+    if(langCodes.indexOf(langCodesError[i]) === -1) {
+      arrDiff.push(langCodesError[i]);
+    }
+  }
+
+  for (var i = 0; i < userParamObj.data.length; i++) {
+      
+    var key = '';
+    if (userParamObj.data[i].name) {
+      key = userParamObj.data[i].name;
+    }
+
+    for (var j = 0; j < langCodesError.length; j++) {
+      if (key === langCodesError[j]) {
+        userParamObj.data[i].collapse = false;
+      }
+    }
+
+    for (var j = 0; j < arrDiff.length; j++) {
+      if (key === arrDiff[j] && key !== lang) {
+        userParamObj.data[i].collapse = true;
+      }
+    }
+
+  }
+
+
+
+  /**
+   * Verify the parameters when the settings dialog remains open.
+   */
+  for (var i = 0; i < userParamObj.data.length; i++) {
+    var key = '';
+    var value = '';
+    if (userParamObj.data[i].name) {
+      key = userParamObj.data[i].name;
+    }
+    if (userParamObj.data[i].value) {
+      value = userParamObj.data[i].value;
+    }
+
+    if (key === 'header_print' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'header_row_1' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'header_row_2' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'header_row_3' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'header_row_4' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'header_row_5' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'logo_print' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'logo_name' && !value) {
+      userParamObj.data[i].value = 'Logo';
+    }
+    if (key === 'address_small_line' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'address_left' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'address_composition' && !value) {
+      userParamObj.data[i].value = '<OrganisationName>\n<NamePrefix>\n<FirstName> <FamilyName>\n<Street> <AddressExtra>\n<POBox>\n<PostalCode> <Locality>';
+    }
+    if (key === 'address_position_dX' && !value) {
+      userParamObj.data[i].value = '0';
+    }
+    if (key === 'address_position_dY' && !value) {
+      userParamObj.data[i].value = '0';
+    }
+    if (key === 'shipping_address' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_invoice_number' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_date' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_customer' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_customer_vat_number' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_customer_fiscal_number' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_due_date' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'info_page' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'details_columns' && !value) {
+      userParamObj.data[i].value = 'Description;Quantity;ReferenceUnit;UnitPrice;Amount';
+    }
+    if (key === 'details_columns_widths' && !value) {
+      userParamObj.data[i].value = '45%;10%;10%;20%;15%';
+    }
+    if (key === 'details_columns_titles_alignment' && !value) {
+      userParamObj.data[i].value = 'left;right;center;right;right';
+    }
+    if (key === 'details_columns_alignment' && !value) {
+      userParamObj.data[i].value = 'left;right;center;right;right';
+    }
+    if (key === 'details_gross_amounts' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'footer_add' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'footer_horizontal_line' && !value) {
+      userParamObj.data[i].value = false;
+    }
+    if (key === 'languages' && !value) {
+      userParamObj.data[i].value = 'de;en;fr;it';
+    }
+    for (var j = 0; j < langCodes.length; j++) {
+      var langTexts = setInvoiceTexts(langCodes[j]);
+          
+      if (key ===  langCodes[j]+'_text_info_invoice_number' && !value) {
+        userParamObj.data[i].value = langTexts.invoice;
+      }
+      if (key ===  langCodes[j]+'_text_info_date' && !value) {
+        userParamObj.data[i].value = langTexts.date;
+      }
+      if (key ===  langCodes[j]+'_text_info_customer' && !value) {
+        userParamObj.data[i].value = langTexts.customer;
+      }
+      if (key ===  langCodes[j]+'_text_info_customer_vat_number' && !value) {
+        userParamObj.data[i].value = langTexts.vat_number;
+      }
+      if (key ===  langCodes[j]+'_text_info_customer_fiscal_number' && !value) {
+        userParamObj.data[i].value = langTexts.fiscal_number;
+      }
+      if (key ===  langCodes[j]+'_text_info_due_date' && !value) {
+        userParamObj.data[i].value = langTexts.payment_terms_label;
+      }
+      if (key ===  langCodes[j]+'_text_info_page' && !value) {
+        userParamObj.data[i].value = langTexts.page;
+      }
+      if (key ===  langCodes[j]+'_text_shipping_address' && !value) {
+        userParamObj.data[i].value = langTexts.shipping_address;
+      }
+      if (key ===  langCodes[j]+'_title_doctype_10' && !value) {
+        userParamObj.data[i].value = langTexts.invoice + " <DocInvoice>";
+      }
+      if (key ===  langCodes[j]+'_title_doctype_12' && !value) {
+        userParamObj.data[i].value = langTexts.credit_note + " <DocInvoice>";
+      }
+      if (key ===  langCodes[j]+'_text_details_columns' && !value) {
+        userParamObj.data[i].value = langTexts.description+";"+langTexts.quantity+";"+langTexts.reference_unit+";"+langTexts.unit_price+";"+langTexts.amount;
+      }
+      if (key ===  langCodes[j]+'_text_total' && !value) {
+        userParamObj.data[i].value = langTexts.total;
+      }
+      if (key ===  langCodes[j]+'_text_final' && !value) {
+        userParamObj.data[i].value = "";
+      }
+      if (key ===  langCodes[j]+'_footer_left' && !value) {
+        userParamObj.data[i].value = langTexts.invoice;
+      }
+      if (key ===  langCodes[j]+'_footer_center' && !value) {
+        userParamObj.data[i].value = '';
+      }
+      if (key ===  langCodes[j]+'_footer_right' && !value) {
+        userParamObj.data[i].value = langTexts.page+' <'+langTexts.page+'>';
+      }
+      if (key ===  langCodes[j]+'_text_info_offer_number' && !value) {
+        userParamObj.data[i].value = langTexts.offer;
+      }
+      if (key ===  langCodes[j]+'_text_info_date_offer' && !value) {
+        userParamObj.data[i].value = langTexts.date;
+      }
+      if (key ===  langCodes[j]+'_text_info_validity_date_offer' && !value) {
+        userParamObj.data[i].value = langTexts.validity_terms_label;
+      }
+      if (key ===  langCodes[j]+'_title_doctype_17' && !value) {
+        userParamObj.data[i].value = langTexts.offer + " <DocInvoice>";
+      }
+      if (key ===  langCodes[j]+'_text_begin_offer' && !value) {
+        userParamObj.data[i].value = "";
+      }
+      if (key ===  langCodes[j]+'_text_final_offer' && !value) {
+        userParamObj.data[i].value = "";
+      }
+    }
+    if (key === 'text_color' && !value) {
+      userParamObj.data[i].value = '#000000';
+    }
+    if (key === 'background_color_details_header' && !value) {
+      userParamObj.data[i].value = '#337AB7';
+    }
+    if (key === 'text_color_details_header' && !value) {
+      userParamObj.data[i].value = '#FFFFFF';
+    }
+    if (key === 'background_color_alternate_lines' && !value) {
+      userParamObj.data[i].value = '#F0F8FF';
+    }
+    if (key === 'font_family' && !value) {
+      userParamObj.data[i].value = 'Helvetica';
+    }
+    if (key === 'font_size' && !value) {
+      userParamObj.data[i].value = '10';
+    }
+    if (key === 'embedded_javascript_filename' && !value) {
+      userParamObj.data[i].value = '';
+    }
+    if (key === 'embedded_css_filename' && !value) {
+      userParamObj.data[i].value = '';
+    }
+  }
+
+
 
   return isValid;
 }

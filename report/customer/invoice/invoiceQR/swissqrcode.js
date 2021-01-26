@@ -1229,6 +1229,13 @@ var QRBill = class QRBill {
 		//If "Payable to" address is selected we use structured type address, otherwise combined address.
 		if (userParam.qr_code_payable_to) {
 
+			//Reset all values before using parameters
+			qrcodeData.creditorName = "";
+			qrcodeData.creditorAddress1 = "";
+			qrcodeData.creditorAddress2 = "";
+			qrcodeData.creditorPostalcode = "";
+			qrcodeData.creditorCity = "";
+			qrcodeData.creditorCountry = "";
 			qrcodeData.creditorAddressType = "S";
 
 			if (userParam.qr_code_creditor_name) {
