@@ -14,7 +14,7 @@
 //
 // @id = ch.banana.ch.invoice.ch10
 // @api = 1.0
-// @pubdate = 2021-01-26
+// @pubdate = 2021-01-27
 // @publisher = Banana.ch SA
 // @description = [CH10] Layout with Swiss QR Code
 // @description.it = [CH10] Layout with Swiss QR Code
@@ -1472,224 +1472,21 @@ function validateParamsData(userParamObj) {
    * - The sum of the column weights: the sum must be 100.
    */
 
-  //Banana.console.log(JSON.stringify(userParamObj, "", " "));
-
   if (!userParamObj || !userParamObj.data) {
     return false;
   }
 
   var texts = setInvoiceTexts(lang);
-
   var lengthDetailsColumns = '';
   var lengthDetailsTexts = '';
-  var langCodes = '';
+  var langCodes = [];
   var langCodesError = [];
-
   var isValid = true;
-
-  for (var i = 0; i < userParamObj.data.length; i++) {
-    
-    var key = '';
-    var value = '';
-
-    if (userParamObj.data[i].name) {
-      key = userParamObj.data[i].name;
-    }
-    if (userParamObj.data[i].value) {
-      value = userParamObj.data[i].value;
-    }
-
-    /**
-     * Checks that XML column names entered exist.
-     * When one or more do not exists, shows a message with a list of wrong column names
-     */
-    if (key === 'details_columns' && value.length > 0) {
-      var validColumns = ['Description','Quantity','ReferenceUnit','UnitPrice','Amount'];
-      var wrongColumns = [];
-      var userColumns = value.split(';');
-      for (var j = 0; j < userColumns.length; j++) {
-        if (!validColumns.includes(userColumns[j])) {
-          wrongColumns.push(userColumns[j]);
-        }
-      }
-      if (wrongColumns.length > 0) {
-        userParamObj.data[i].errorId = 'ID_ERR_COLUMNS_NAMES';
-        userParamObj.data[i].errorMsg = '@error ' + texts.error2_msg + ': ' + wrongColumns; //'@error XML column names: ' + wrongColumns;
-        isValid = false;
-      }
-      else {
-        if (userParamObj.data[i].errorId) {
-          delete userParamObj.data[i].errorId;
-        }
-        if (userParamObj.data[i].errorMsg) {
-          delete userParamObj.data[i].errorMsg;
-        }
-      }
-    }
-    // Leave empty to use default values and remove errors
-    else if (key === 'details_columns' && value.length <= 0) {
-      //userParamObj.data[i].value = 'Description;Quantity;ReferenceUnit;UnitPrice;Amount';
-      if (userParamObj.data[i].errorId) {
-        delete userParamObj.data[i].errorId;
-      }
-      if (userParamObj.data[i].errorMsg) {
-        delete userParamObj.data[i].errorMsg;
-      }
-    }
-
-
-    /**
-     * Checks the column weights sum.
-     * When the sum is not 100%, shows an error message with the acutal total sum
-     */
-    if (key === 'details_columns_widths' && value.length > 0) {
-      var strWidths = value.replace(/%/g,'');
-      var widths = strWidths.split(';');
-      var widthSum = 0;
-      for (var j = 0; j < widths.length; j++) {
-        widthSum = Banana.SDecimal.add(widthSum, widths[j]);
-      }
-      if (widthSum != 100) {
-        userParamObj.data[i].errorId = 'ID_ERR_COLUMNS_WIDTH';
-        userParamObj.data[i].errorMsg = '@error ' + texts.error3_msg + ': ' + widthSum + '%'; //'@error '+ widthSum + '%';
-        isValid = false;
-      }
-      else {
-        if (userParamObj.data[i].errorId) {
-          delete userParamObj.data[i].errorId;
-        }
-        if (userParamObj.data[i].errorMsg) {
-          delete userParamObj.data[i].errorMsg;
-        }
-      }
-    }
-    // Leave empty to use default values and remove errors
-    else if (key === 'details_columns_widths' && value.length <= 0) {
-      //userParamObj.data[i].value = '45%;10%;10%;20%;15%';
-      if (userParamObj.data[i].errorId) {
-        delete userParamObj.data[i].errorId;
-      }
-      if (userParamObj.data[i].errorMsg) {
-        delete userParamObj.data[i].errorMsg;
-      }
-    }
-
-
-
-
-    /**
-     * Checks that columns number and the related texts titles match.
-     * When not shows an error message
-     */
-    if (key === "details_columns") {
-      if (value.length > 0) {
-        lengthDetailsColumns = value.split(";").length;
-      } else {
-        lengthDetailsColumns = 5; //when empty use default 5 columns
-      }
-    }
-
-    if (key === "languages" && value.length > 0) {
-      langCodes = value.split(';');
-    }
-
-    for (var j = 0; j < langCodes.length; j++) {
-
-      var langTexts = setInvoiceTexts(langCodes[j]);
-
-      if (key === langCodes[j]+'_text_details_columns' && value.length > 0) {
-
-        lengthDetailsTexts = value.split(";").length; //number of column titles
-
-        if (lengthDetailsColumns != lengthDetailsTexts) {
-          userParamObj.data[i].errorId = 'ID_ERR_COLUMN_NAMES_AND_TEXTS_'+langCodes[j].toUpperCase();
-          userParamObj.data[i].errorMsg = '@error ' + langTexts[langCodes[j]+'_error1_msg'];
-          isValid = false;
-          langCodesError.push(langCodes[j]); //array with all language codes with errors
-        }
-        else {
-          if (userParamObj.data[i].errorId) {
-            delete userParamObj.data[i].errorId;
-          }
-          if (userParamObj.data[i].errorMsg) {
-            delete userParamObj.data[i].errorMsg;
-          }
-        }
-      }
-      // Leave empty to use default values and remove errors
-      else if (key === langCodes[j]+'_text_details_columns' && value.length <= 0) {
-        
-        userParamObj.data[i].value = langTexts.description+";"+langTexts.quantity+";"+langTexts.reference_unit+";"+langTexts.unit_price+";"+langTexts.amount;
-        
-        lengthDetailsTexts = userParamObj.data[i].value.split(";").length; //number of column titles
-
-        if (lengthDetailsColumns != lengthDetailsTexts) {
-          userParamObj.data[i].errorId = 'ID_ERR_COLUMN_NAMES_AND_TEXTS_'+langCodes[j].toUpperCase();
-          userParamObj.data[i].errorMsg = '@error ' + langTexts[langCodes[j]+'_error1_msg'];
-          isValid = false;
-          langCodesError.push(langCodes[j]); //array with all language codes with errors
-        }
-        else {
-          if (userParamObj.data[i].errorId) {
-            delete userParamObj.data[i].errorId;
-          }
-          if (userParamObj.data[i].errorMsg) {
-            delete userParamObj.data[i].errorMsg;
-          }
-        }
-      }
-    }
-  
-
-
-
-
-  }
-
-
-  // Banana.console.log(lengthDetailsColumns);
-  // Banana.console.log(langCodes);
-  // Banana.console.log(langCodesError);
-  // Banana.console.log(arrDiff);
-
-
-  var arrDiff = [];
-  for (var i in langCodes) {
-    if(langCodesError.indexOf(langCodes[i]) === -1) {
-      arrDiff.push(langCodes[i]);
-    }
-  }
-  for(i in langCodesError) {
-    if(langCodes.indexOf(langCodesError[i]) === -1) {
-      arrDiff.push(langCodesError[i]);
-    }
-  }
-
-  for (var i = 0; i < userParamObj.data.length; i++) {
-      
-    var key = '';
-    if (userParamObj.data[i].name) {
-      key = userParamObj.data[i].name;
-    }
-
-    for (var j = 0; j < langCodesError.length; j++) {
-      if (key === langCodesError[j]) {
-        userParamObj.data[i].collapse = false;
-      }
-    }
-
-    for (var j = 0; j < arrDiff.length; j++) {
-      if (key === arrDiff[j] && key !== lang) {
-        userParamObj.data[i].collapse = true;
-      }
-    }
-
-  }
-
 
 
   /**
-   * Verify the parameters when the settings dialog remains open.
+   * Verify parameters when settings dialog remains open.
+   * Set the default values to parameters when empty.
    */
   for (var i = 0; i < userParamObj.data.length; i++) {
     var key = '';
@@ -1701,35 +1498,8 @@ function validateParamsData(userParamObj) {
       value = userParamObj.data[i].value;
     }
 
-    if (key === 'header_print' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'header_row_1' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'header_row_2' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'header_row_3' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'header_row_4' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'header_row_5' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'logo_print' && !value) {
-      userParamObj.data[i].value = false;
-    }
     if (key === 'logo_name' && !value) {
       userParamObj.data[i].value = 'Logo';
-    }
-    if (key === 'address_small_line' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'address_left' && !value) {
-      userParamObj.data[i].value = false;
     }
     if (key === 'address_composition' && !value) {
       userParamObj.data[i].value = '<OrganisationName>\n<NamePrefix>\n<FirstName> <FamilyName>\n<Street> <AddressExtra>\n<POBox>\n<PostalCode> <Locality>';
@@ -1739,30 +1509,6 @@ function validateParamsData(userParamObj) {
     }
     if (key === 'address_position_dY' && !value) {
       userParamObj.data[i].value = '0';
-    }
-    if (key === 'shipping_address' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_invoice_number' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_date' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_customer' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_customer_vat_number' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_customer_fiscal_number' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_due_date' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'info_page' && !value) {
-      userParamObj.data[i].value = false;
     }
     if (key === 'details_columns' && !value) {
       userParamObj.data[i].value = 'Description;Quantity;ReferenceUnit;UnitPrice;Amount';
@@ -1776,18 +1522,13 @@ function validateParamsData(userParamObj) {
     if (key === 'details_columns_alignment' && !value) {
       userParamObj.data[i].value = 'left;right;center;right;right';
     }
-    if (key === 'details_gross_amounts' && !value) {
-      userParamObj.data[i].value = false;
+    if (key === 'languages') {
+      if(!value) {
+        userParamObj.data[i].value = 'de;en;fr;it';
+      }
+      langCodes = userParamObj.data[i].value.split(';');
     }
-    if (key === 'footer_add' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'footer_horizontal_line' && !value) {
-      userParamObj.data[i].value = false;
-    }
-    if (key === 'languages' && !value) {
-      userParamObj.data[i].value = 'de;en;fr;it';
-    }
+
     for (var j = 0; j < langCodes.length; j++) {
       var langTexts = setInvoiceTexts(langCodes[j]);
           
@@ -1827,14 +1568,8 @@ function validateParamsData(userParamObj) {
       if (key ===  langCodes[j]+'_text_total' && !value) {
         userParamObj.data[i].value = langTexts.total;
       }
-      if (key ===  langCodes[j]+'_text_final' && !value) {
-        userParamObj.data[i].value = "";
-      }
       if (key ===  langCodes[j]+'_footer_left' && !value) {
         userParamObj.data[i].value = langTexts.invoice;
-      }
-      if (key ===  langCodes[j]+'_footer_center' && !value) {
-        userParamObj.data[i].value = '';
       }
       if (key ===  langCodes[j]+'_footer_right' && !value) {
         userParamObj.data[i].value = langTexts.page+' <'+langTexts.page+'>';
@@ -1850,12 +1585,6 @@ function validateParamsData(userParamObj) {
       }
       if (key ===  langCodes[j]+'_title_doctype_17' && !value) {
         userParamObj.data[i].value = langTexts.offer + " <DocInvoice>";
-      }
-      if (key ===  langCodes[j]+'_text_begin_offer' && !value) {
-        userParamObj.data[i].value = "";
-      }
-      if (key ===  langCodes[j]+'_text_final_offer' && !value) {
-        userParamObj.data[i].value = "";
       }
     }
     if (key === 'text_color' && !value) {
@@ -1876,15 +1605,155 @@ function validateParamsData(userParamObj) {
     if (key === 'font_size' && !value) {
       userParamObj.data[i].value = '10';
     }
-    if (key === 'embedded_javascript_filename' && !value) {
-      userParamObj.data[i].value = '';
-    }
-    if (key === 'embedded_css_filename' && !value) {
-      userParamObj.data[i].value = '';
-    }
   }
 
 
+  /**
+   * Check and validate some parameters.
+   * When there is something wrong, the settings dialog remains open and a red message shows the error type.
+   */
+  for (var i = 0; i < userParamObj.data.length; i++) {
+    
+    var key = '';
+    var value = '';
+
+    if (userParamObj.data[i].name) {
+      key = userParamObj.data[i].name;
+    }
+    if (userParamObj.data[i].value) {
+      value = userParamObj.data[i].value;
+    }
+
+    /**
+     * Checks that XML column names entered exist.
+     * When one or more columns do not exists, shows a message with a list of wrong column names.
+     * Only default columns are checked (Description, Quantity, ReferenceUnit, UnitPrice, Amount).
+     * Other columns are not checked.
+     */
+    if (key === 'details_columns') {
+      var validColumns = ['Description','Quantity','ReferenceUnit','UnitPrice','Amount'];
+      var wrongColumns = [];
+      var userColumns = value.split(';');
+      for (var j = 0; j < userColumns.length; j++) {
+        if (!validColumns.includes(userColumns[j])) {
+          wrongColumns.push(userColumns[j]);
+        }
+      }
+      if (wrongColumns.length > 0) {
+        userParamObj.data[i].errorId = 'ID_ERR_COLUMNS_NAMES';
+        userParamObj.data[i].errorMsg = '@error ' + texts.error2_msg + ': ' + wrongColumns;
+        isValid = false;
+      }
+      else {
+        if (userParamObj.data[i].errorId) {
+          delete userParamObj.data[i].errorId;
+        }
+        if (userParamObj.data[i].errorMsg) {
+          delete userParamObj.data[i].errorMsg;
+        }
+      }
+    }
+
+
+    /**
+     * Checks that the total sum of the weights is 100%.
+     * When it's not, shows an error message with the acutal total sum.
+     */
+    if (key === 'details_columns_widths') {
+      var strWidths = value.replace(/%/g,'');
+      var widths = strWidths.split(';');
+      var widthSum = 0;
+      for (var j = 0; j < widths.length; j++) {
+        widthSum = Banana.SDecimal.add(widthSum, widths[j]);
+      }
+      if (widthSum != 100) {
+        userParamObj.data[i].errorId = 'ID_ERR_COLUMNS_WIDTH';
+        userParamObj.data[i].errorMsg = '@error ' + texts.error3_msg + ': ' + widthSum + '%';
+        isValid = false;
+      }
+      else {
+        if (userParamObj.data[i].errorId) {
+          delete userParamObj.data[i].errorId;
+        }
+        if (userParamObj.data[i].errorMsg) {
+          delete userParamObj.data[i].errorMsg;
+        }
+      }
+    }
+
+
+    /**
+     * Checks that columns number and the related texts titles match.
+     * When not shows an error message
+     */
+    if (key === "details_columns") {
+      lengthDetailsColumns = value.split(";").length; //number of column titles
+    }
+    if (key === "languages") {
+      langCodes = value.split(';');
+    }
+
+    for (var j = 0; j < langCodes.length; j++) {
+
+      var langTexts = setInvoiceTexts(langCodes[j]);
+
+      if (key === langCodes[j]+'_text_details_columns') {
+
+        lengthDetailsTexts = value.split(";").length; //number of column texts titles
+
+        if (lengthDetailsColumns != lengthDetailsTexts) {
+          userParamObj.data[i].errorId = 'ID_ERR_COLUMN_NAMES_AND_TEXTS_'+langCodes[j].toUpperCase();
+          userParamObj.data[i].errorMsg = '@error ' + langTexts[langCodes[j]+'_error1_msg'];
+          isValid = false;
+          langCodesError.push(langCodes[j]); //array with all language codes with errors
+        }
+        else {
+          if (userParamObj.data[i].errorId) {
+            delete userParamObj.data[i].errorId;
+          }
+          if (userParamObj.data[i].errorMsg) {
+            delete userParamObj.data[i].errorMsg;
+          }
+        }
+      }
+    }
+
+  }
+
+  // Find differences between the two arrays. 
+  var arrDiff = [];
+  for (var i in langCodes) {
+    if(langCodesError.indexOf(langCodes[i]) === -1) {
+      arrDiff.push(langCodes[i]);
+    }
+  }
+  for(i in langCodesError) {
+    if(langCodes.indexOf(langCodesError[i]) === -1) {
+      arrDiff.push(langCodesError[i]);
+    }
+  }
+
+  /**
+   * Do not collapse the language texts groups that have errors, so the errors are visible and not hidden.
+   * When there are no errors collapse the language group.
+   * The language group defined in File Properties is not collapsed.
+   */
+  for (var i = 0; i < userParamObj.data.length; i++) {
+    var key = '';
+    if (userParamObj.data[i].name) {
+      key = userParamObj.data[i].name;
+    }
+    for (var j = 0; j < langCodesError.length; j++) {
+      if (key === langCodesError[j]) {
+        userParamObj.data[i].collapse = false;
+      }
+    }
+    for (var j = 0; j < arrDiff.length; j++) {
+      if (key === arrDiff[j] && key !== lang) {
+        userParamObj.data[i].collapse = true;
+      }
+    }
+  }
 
   return isValid;
 }
