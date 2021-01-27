@@ -1635,8 +1635,10 @@ function validateParamsData(userParamObj) {
       var wrongColumns = [];
       var userColumns = value.split(';');
       for (var j = 0; j < userColumns.length; j++) {
-        if (!validColumns.includes(userColumns[j])) {
-          wrongColumns.push(userColumns[j]);
+        if (userColumns[j].substring(0,2) !== 'T.') {
+          if (!validColumns.includes(userColumns[j])) {
+            wrongColumns.push(userColumns[j]);
+          }
         }
       }
       if (wrongColumns.length > 0) {
