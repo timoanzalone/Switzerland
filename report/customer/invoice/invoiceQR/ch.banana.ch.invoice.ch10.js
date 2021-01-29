@@ -14,7 +14,7 @@
 //
 // @id = ch.banana.ch.invoice.ch10
 // @api = 1.0
-// @pubdate = 2021-01-27
+// @pubdate = 2021-01-29
 // @publisher = Banana.ch SA
 // @description = [CH10] Layout with Swiss QR Code
 // @description.it = [CH10] Layout with Swiss QR Code
@@ -1631,15 +1631,29 @@ function validateParamsData(userParamObj) {
      * Other columns are not checked.
      */
     if (key === 'details_columns') {
-      var validColumns = ['Description','Quantity','ReferenceUnit','UnitPrice','Amount'];
+
+      var defaultColumns = ['Description','Quantity','ReferenceUnit','UnitPrice','Amount'];
+      var customColumns = [];
+
+      if (Banana.document.table("Transactions")) {
+        var tabTransaction = Banana.document.table("Transactions");
+        var tColumnNames = tabTransaction.columnNames;
+        for (var k = 0; k < tColumnNames.length; k++) {
+          if (tColumnNames[k] !== 'Description' && tColumnNames[k] !== 'Quantity' && tColumnNames[k] !== 'ReferenceUnit' && tColumnNames[k] !== 'UnitPrice' && tColumnNames[k] !== 'Amount') {
+            customColumns.push("T."+tColumnNames[k]);
+          }
+        }
+      }
+
+      var validColumns = defaultColumns.concat(customColumns); //default + custom columns
       var wrongColumns = [];
       var userColumns = value.split(';');
       for (var j = 0; j < userColumns.length; j++) {
-        if (userColumns[j].substring(0,2) !== 'T.') {
+        //if (userColumns[j].substring(0,2) !== 'T.') {
           if (!validColumns.includes(userColumns[j])) {
             wrongColumns.push(userColumns[j]);
           }
-        }
+        //}
       }
       if (wrongColumns.length > 0) {
         userParamObj.data[i].errorId = 'ID_ERR_COLUMNS_NAMES';
@@ -4382,7 +4396,7 @@ function bananaRequiredVersion(requiredVersion, expmVersion) {
   return true;
 }
 
-function isBananaAdvanced(requiredVersion, expmVersion) {
+function isBananaAdvancedOld(requiredVersion, expmVersion) {
   /*
    * Check version and license type for advanced features.
    *
@@ -4438,3 +4452,19 @@ function isBananaAdvanced(requiredVersion, expmVersion) {
   }
 }
 
+function isBananaAdvanced(requiredVersion, expmVersion) {
+    // Starting from version 10.0.7 it is possible to read the property Banana.application.license.isWithinMaxRowLimits 
+    // to check if all application functionalities are permitted
+    // the version Advanced returns isWithinMaxRowLimits always false
+    // other versions return isWithinMaxRowLimits true if the limit of transactions number has not been reached
+
+    if (Banana.compareVersion && Banana.compareVersion(Banana.application.version, "10.0.7") >= 0) {
+        var license = Banana.application.license;
+        if (license.licenseType === "advanced" || license.isWithinMaxFreeLines) {
+          return true;
+        }
+        return false;
+    }
+
+    return isBananaAdvancedOld(requiredVersion, expmVersion);
+}
