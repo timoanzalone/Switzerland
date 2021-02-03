@@ -960,7 +960,8 @@ ISO20022CamtFile.prototype.extractCustomerNumber = function(esrNumber) {
 
    // Use Banana format for PVR and QR
    if (this.params.customer_no.banana_format) {
-      // Extract invoice number from QR reference
+      
+      // Extract customer number from QR reference
       if (customerNumber.startsWith("RF")) {
 
          /*
@@ -995,7 +996,7 @@ ISO20022CamtFile.prototype.extractCustomerNumber = function(esrNumber) {
       }
       else {
          
-         // Extract invoice number from PVR reference
+         // Extract customer number from PVR reference
 
          /////////////////////////////////////////////////////////
          // TEST
